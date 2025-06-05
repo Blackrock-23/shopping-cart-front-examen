@@ -18,8 +18,7 @@ function getCarts() {
     updateCartCount();
     
     // Obtener carritos desde la API
-    // Nota: Como la API puede no tener endpoint de carritos, usaremos usuarios y simularemos carritos
-    fetch(`${API_URL}/users`, {
+        fetch(`${API_URL}/carts`, {
         method: "GET",
         headers: {
             "Content-type": "application/json"
@@ -79,9 +78,12 @@ function getCarts() {
         let cartsHtml = `
             <div class="d-flex justify-content-between mb-3">
                 <h5>Total carritos: ${carts.length}</h5>
-                <button class="btn btn-sm btn-outline-secondary" onclick="showWelcomeMessage()">
-                    <i class="bi bi-arrow-left me-1"></i>Volver
-                </button>
+                <div>
+                    <button class="btn btn-warning me-2" onclick="showAddCartForm()"><i class='bi bi-cart-plus'></i> Agregar carrito</button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="showWelcomeMessage()">
+                        <i class="bi bi-arrow-left me-1"></i>Volver
+                    </button>
+                </div>
             </div>
             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
         `;
@@ -311,25 +313,252 @@ function showCartDetails(cartId) {
 
 // Función para actualizar el contador de carritos en el dashboard
 function updateCartCount() {
-    // Usar usuarios como base para los carritos
-    fetch(`${API_URL}/users`, {
-        method: "GET",
-        headers: {
-            "Content-type": "application/json"
-        }
-    })
+    // Como la API no tiene un endpoint específico para contar carritos,
+    // usamos el contador que actualizamos al cargar los carritos
+    const cartCountElement = document.getElementById('cartCount');
+    if (cartCountElement) {
+        cartCountElement.textContent = cartCount;
+    }
+    
+    // También podemos intentar obtener el conteo de la API
+    fetch(`${API_URL}/carts`)
     .then(response => response.json())
-    .then(users => {
-        // Actualizar contador global
-        cartCount = users.length;
-        
-        // Actualizar contador en el dashboard si existe
-        const cartCountElement = document.getElementById('cartCount');
-        if (cartCountElement) {
-            cartCountElement.textContent = cartCount;
+    .then(carts => {
+        if (Array.isArray(carts)) {
+            cartCount = carts.length;
+            if (cartCountElement) {
+                cartCountElement.textContent = cartCount;
+            }
         }
     })
     .catch(error => {
         console.error('Error al actualizar contador de carritos:', error);
+    });
+}
+
+// Función para mostrar el formulario de agregar carrito
+function showAddCartForm() {
+    document.getElementById('info').innerHTML = `
+        <div class="card shadow">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">Agregar nuevo carrito</h5>
+            </div>
+            <div class="card-body">
+                <form id="addCartForm">
+                    <div class="mb-3">
+                        <label for="cartUserId" class="form-label">ID de Usuario</label>
+                        <input type="number" class="form-control" id="cartUserId" required>
+                        <div class="form-text">Ingrese el ID del usuario dueño del carrito.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Productos</label>
+                        <div id="cartItems">
+                            <div class="card mb-2">
+                                <div class="card-body">
+                                    <div class="row g-3">
+                                        <div class="col-md-5">
+                                            <label class="form-label">ID del Producto</label>
+                                            <input type="number" class="form-control product-id" required>
+                                        </div>
+                                        <div class="col-md-5">
+                                            <label class="form-label">Cantidad</label>
+                                            <input type="number" class="form-control product-quantity" value="1" min="1" required>
+                                        </div>
+                                        <div class="col-md-2 d-flex align-items-end">
+                                            <button type="button" class="btn btn-danger btn-sm w-100" onclick="removeCartItem(this)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="addCartItem()">
+                            <i class="bi bi-plus-circle"></i> Agregar producto
+                        </button>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <button type="button" class="btn btn-secondary" onclick="getCarts()">
+                            <i class="bi bi-arrow-left me-1"></i>Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-warning text-dark">
+                            <i class="bi bi-save me-1"></i>Guardar Carrito
+                        </button>
+                    </div>
+                </form>
+                <div id="formMessage" class="mt-3"></div>
+            </div>
+        </div>
+    `;
+
+    // Agregar manejador de eventos al formulario
+    document.getElementById('addCartForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        addCart();
+    });
+}
+
+// Función para agregar un nuevo campo de producto al carrito
+function addCartItem() {
+    const itemsContainer = document.getElementById('cartItems');
+    const itemCount = itemsContainer.querySelectorAll('.card').length;
+    
+    if (itemCount >= 10) {
+        document.getElementById('formMessage').innerHTML = `
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>Máximo 10 productos por carrito.
+            </div>
+        `;
+        return;
+    }
+    
+    const newItem = document.createElement('div');
+    newItem.className = 'card mb-2';
+    newItem.innerHTML = `
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-5">
+                    <label class="form-label">ID del Producto</label>
+                    <input type="number" class="form-control product-id" required>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label">Cantidad</label>
+                    <input type="number" class="form-control product-quantity" value="1" min="1" required>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-danger btn-sm w-100" onclick="removeCartItem(this)">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    itemsContainer.appendChild(newItem);
+}
+
+// Función para eliminar un producto del formulario de carrito
+function removeCartItem(button) {
+    const itemCard = button.closest('.card');
+    if (itemCard && document.querySelectorAll('#cartItems .card').length > 1) {
+        itemCard.remove();
+    } else if (itemCard) {
+        // No permitir eliminar el último producto
+        document.getElementById('formMessage').innerHTML = `
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>El carrito debe tener al menos un producto.
+            </div>
+        `;
+    }
+}
+
+// Función para agregar un nuevo carrito
+function addCart() {
+    const formMessage = document.getElementById('formMessage');
+    formMessage.innerHTML = '';
+    
+    const userId = parseInt(document.getElementById('cartUserId').value);
+    const productInputs = document.querySelectorAll('#cartItems .card');
+    
+    // Validaciones básicas
+    if (isNaN(userId) || userId <= 0) {
+        formMessage.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>Ingrese un ID de usuario válido.
+            </div>
+        `;
+        return;
+    }
+    
+    if (productInputs.length === 0) {
+        formMessage.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>Agregue al menos un producto al carrito.
+            </div>
+        `;
+        return;
+    }
+    
+    // Recolectar productos
+    const products = [];
+    let hasError = false;
+    
+    productInputs.forEach((card, index) => {
+        const productId = parseInt(card.querySelector('.product-id').value);
+        const quantity = parseInt(card.querySelector('.product-quantity').value);
+        
+        if (isNaN(productId) || productId <= 0 || isNaN(quantity) || quantity <= 0) {
+            formMessage.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Verifique los datos del producto ${index + 1}.
+                </div>
+            `;
+            hasError = true;
+            return;
+        }
+        
+        products.push({
+            productId: productId,
+            quantity: quantity
+        });
+    });
+    
+    if (hasError) return;
+    
+    // Mostrar indicador de carga
+    const submitBtn = document.querySelector('#addCartForm button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...';
+    
+    // Crear el objeto carrito según la estructura de la API
+    const newCart = {
+        userId: userId,
+        date: new Date().toISOString().split('T')[0], // Formato YYYY-MM-DD
+        products: products
+    };
+    
+    // Enviar la petición a la API
+    fetch('https://fakestoreapi.com/carts', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newCart)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error al guardar el carrito');
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Mostrar mensaje de éxito
+        formMessage.innerHTML = `
+            <div class="alert alert-success">
+                <i class="bi bi-check-circle-fill me-2"></i>Carrito guardado exitosamente.
+            </div>
+        `;
+        
+        // Limpiar el formulario
+        document.getElementById('addCartForm').reset();
+        
+        // Actualizar la lista de carritos después de 1.5 segundos
+        setTimeout(() => {
+            getCarts();
+        }, 1500);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        formMessage.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>Error al guardar el carrito: ${error.message}
+            </div>
+        `;
+    })
+    .finally(() => {
+        // Restaurar el botón
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
     });
 }

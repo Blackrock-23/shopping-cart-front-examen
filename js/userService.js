@@ -1,5 +1,5 @@
 // URL base de la API
-const API_URL = 'https://api.escuelajs.co/api/v1';
+const API_URL = 'https://fakestoreapi.com';
 
 // Función para obtener y mostrar usuarios
 function getUsers() {
@@ -45,41 +45,45 @@ function getUsers() {
         let usersHtml = `
             <div class="d-flex justify-content-between mb-3">
                 <h5>Total usuarios: ${users.length}</h5>
-                <button class="btn btn-sm btn-outline-secondary" onclick="showWelcomeMessage()">
-                    <i class="bi bi-arrow-left me-1"></i>Volver
-                </button>
+                <div>
+                    <button class="btn btn-success me-2" onclick="showAddUserForm()"><i class='bi bi-person-plus'></i> Agregar usuario</button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="showWelcomeMessage()">
+                        <i class="bi bi-arrow-left me-1"></i>Volver
+                    </button>
+                </div>
             </div>
             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
         `;
         
         users.forEach(user => {
-            usersHtml += `
-                <div class="col">
-                    <div class="card h-100">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0">${user.name}</h6>
-                            <span class="badge bg-${getRoleBadgeColor(user.role)}">${user.role}</span>
-                        </div>
-                        <div class="card-body text-center">
-                            <img src="${user.avatar || 'https://api.lorem.space/image/face?w=150&h=150'}" 
-                                class="rounded-circle mb-3" width="100" height="100" 
-                                alt="Avatar de ${user.name}">
-                            <p class="card-text mb-1">
-                                <i class="bi bi-envelope me-2 text-primary"></i>${user.email}
-                            </p>
-                            <p class="card-text">
-                                <i class="bi bi-person-badge me-2 text-primary"></i>ID: ${user.id}
-                            </p>
-                        </div>
-                        <div class="card-footer bg-transparent border-top-0 text-center">
-                            <button class="btn btn-sm btn-primary" onclick="showUserDetails(${user.id})">
-                                <i class="bi bi-eye me-1"></i>Ver detalles
-                            </button>
-                        </div>
-                    </div>
+    const fullName = user.name ? `${user.name.firstname} ${user.name.lastname}` : user.username;
+    usersHtml += `
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">${fullName}</h6>
+                    <span class="badge bg-secondary">usuario</span>
                 </div>
-            `;
-        });
+                <div class="card-body text-center">
+                    <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=0D8ABC&color=fff" 
+                        class="rounded-circle mb-3" width="100" height="100" 
+                        alt="Avatar de ${fullName}">
+                    <p class="card-text mb-1">
+                        <i class="bi bi-envelope me-2 text-primary"></i>${user.email}
+                    </p>
+                    <p class="card-text">
+                        <i class="bi bi-person-badge me-2 text-primary"></i>ID: ${user.id}
+                    </p>
+                </div>
+                <div class="card-footer bg-transparent border-top-0 text-center">
+                    <button class="btn btn-sm btn-primary" onclick="showUserDetails(${user.id})">
+                        <i class="bi bi-eye me-1"></i>Ver detalles
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+});
         
         usersHtml += `
             </div>
@@ -337,8 +341,16 @@ function showAddUserForm() {
                         <input type="email" class="form-control" id="newEmail" required>
                     </div>
                     <div class="mb-3">
-                        <label for="newJob" class="form-label">Puesto</label>
-                        <input type="text" class="form-control" id="newJob" required>
+                        <label for="newUsername" class="form-label">Usuario</label>
+                        <input type="text" class="form-control" id="newUsername" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label">Contraseña</label>
+                        <input type="password" class="form-control" id="newPassword" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newPhone" class="form-label">Teléfono</label>
+                        <input type="text" class="form-control" id="newPhone">
                     </div>
                     <div class="d-flex justify-content-between">
                         <button type="button" class="btn btn-secondary" onclick="getUsers()">Cancelar</button>
@@ -355,8 +367,10 @@ function addUser() {
     const firstName = document.getElementById('newFirstName').value;
     const lastName = document.getElementById('newLastName').value;
     const email = document.getElementById('newEmail').value;
-    const job = document.getElementById('newJob').value;
-    
+    const username = document.getElementById('newUsername').value;
+    const password = document.getElementById('newPassword').value;
+    const phone = document.getElementById('newPhone').value;
+
     document.getElementById('info').innerHTML = `
         <div class="d-flex justify-content-center">
             <div class="spinner-border text-success" role="status">
@@ -364,18 +378,19 @@ function addUser() {
             </div>
         </div>
     `;
-    
-    fetch('https://reqres.in/api/users', {
+
+    fetch('https://fakestoreapi.com/users', {
         method: "POST",
         headers: {
-            "Content-type": "application/json",
-            'x-api-key': 'reqres-free-v1'
+            "Content-type": "application/json"
         },
         body: JSON.stringify({
-            first_name: firstName,
-            last_name: lastName,
             email: email,
-            job: job
+            username: username,
+            password: password,
+            name: { firstname: firstName, lastname: lastName },
+            address: { city: "", street: "", number: 0, zipcode: "", geolocation: { lat: "", long: "" }},
+            phone: phone
         })
     })
     .then(response => response.json())
@@ -388,14 +403,14 @@ function addUser() {
             <strong>¡Éxito!</strong> Usuario creado correctamente con ID: ${data.id}.
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         `;
-        
+
         document.body.appendChild(alertDiv);
-        
+
         // Eliminar alerta después de 3 segundos
         setTimeout(() => {
             alertDiv.remove();
         }, 3000);
-        
+
         // Volver a la lista de usuarios
         getUsers();
     })
@@ -466,23 +481,24 @@ function updateUserCount() {
         
         // Eliminar alerta después de 3 segundos
         setTimeout(() => {
-            alertDiv.remove();
-        }, 3000).catch(error => {
-        // Mostrar mensaje de error
-        const alertDiv = document.createElement('div');
-        alertDiv.className = 'alert alert-danger alert-dismissible fade show position-fixed top-0 end-0 m-3';
-        alertDiv.setAttribute('role', 'alert');
-        alertDiv.innerHTML = `
+            alertDiv.remove(); // This alertDiv is the success alert from line 456-462
+        }, 3000);
+
+        // Mostrar mensaje de error (for CSV export, now runs sequentially after scheduling removal of success alert)
+        const alertDivError = document.createElement('div'); // Renamed from alertDiv
+        alertDivError.className = 'alert alert-danger alert-dismissible fade show position-fixed top-0 end-0 m-3';
+        alertDivError.setAttribute('role', 'alert');
+        alertDivError.innerHTML = `
             <strong>Error:</strong> No se pudieron exportar los usuarios.
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         `;
         
-        document.body.appendChild(alertDiv);
+        document.body.appendChild(alertDivError);
         
         // Eliminar alerta después de 3 segundos
         setTimeout(() => {
-            alertDiv.remove();
+            alertDivError.remove();
         }, 3000);
-    });
-}
+    }
+});
 }

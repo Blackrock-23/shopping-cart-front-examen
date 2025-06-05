@@ -57,6 +57,7 @@ function getProducts() {
             <div class="d-flex justify-content-between mb-3">
                 <h5>Total productos: ${products.length}</h5>
                 <div>
+                    <button class="btn btn-success me-2" onclick="showAddProductForm()"><i class='bi bi-plus-circle'></i> Agregar producto</button>
                     <button class="btn btn-sm btn-outline-primary me-2" onclick="toggleView('cards')">Vista tarjetas</button>
                     <button class="btn btn-sm btn-outline-secondary" onclick="toggleView('table')">Vista tabla</button>
                 </div>
@@ -395,4 +396,135 @@ function removeFromFavorites(id) {
     
     // Actualizar la vista de favoritos
     showFavorites();
+}
+
+// Función para mostrar el formulario de agregar producto
+function showAddProductForm() {
+    document.getElementById('info').innerHTML = `
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Agregar nuevo producto</h5>
+            </div>
+            <div class="card-body">
+                <form id="addProductForm">
+                    <div class="mb-3">
+                        <label for="productTitle" class="form-label">Título</label>
+                        <input type="text" class="form-control" id="productTitle" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="productPrice" class="form-label">Precio</label>
+                        <input type="number" step="0.01" class="form-control" id="productPrice" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="productDescription" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="productDescription" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="productCategory" class="form-label">Categoría</label>
+                        <input type="text" class="form-control" id="productCategory" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="productImage" class="form-label">URL de la imagen</label>
+                        <input type="url" class="form-control" id="productImage" required>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <button type="button" class="btn btn-secondary" onclick="getProducts()">
+                            <i class="bi bi-arrow-left me-1"></i>Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-save me-1"></i>Guardar Producto
+                        </button>
+                    </div>
+                </form>
+                <div id="formMessage" class="mt-3"></div>
+            </div>
+        </div>
+    `;
+
+    // Agregar manejador de eventos al formulario
+    document.getElementById('addProductForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        addProduct();
+    });
+}
+
+// Función para agregar un nuevo producto
+function addProduct() {
+    const formMessage = document.getElementById('formMessage');
+    formMessage.innerHTML = '';
+    
+    const title = document.getElementById('productTitle').value.trim();
+    const price = parseFloat(document.getElementById('productPrice').value);
+    const description = document.getElementById('productDescription').value.trim();
+    const category = document.getElementById('productCategory').value.trim();
+    const image = document.getElementById('productImage').value.trim();
+    
+    // Validaciones básicas
+    if (!title || isNaN(price) || !description || !category || !image) {
+        formMessage.innerHTML = `
+            <div class="alert alert-danger">
+                Por favor complete todos los campos correctamente.
+            </div>
+        `;
+        return;
+    }
+    
+    // Mostrar indicador de carga
+    const submitBtn = document.querySelector('#addProductForm button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...';
+    
+    // Crear el objeto producto según la estructura de la API
+    const newProduct = {
+        title,
+        price,
+        description,
+        category,
+        image
+    };
+    
+    // Enviar la petición a la API
+    fetch('https://fakestoreapi.com/products', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newProduct)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error al guardar el producto');
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Mostrar mensaje de éxito
+        formMessage.innerHTML = `
+            <div class="alert alert-success">
+                <i class="bi bi-check-circle-fill me-2"></i>Producto guardado exitosamente.
+            </div>
+        `;
+        
+        // Limpiar el formulario
+        document.getElementById('addProductForm').reset();
+        
+        // Actualizar la lista de productos después de 1.5 segundos
+        setTimeout(() => {
+            getProducts();
+        }, 1500);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        formMessage.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>Error al guardar el producto: ${error.message}
+            </div>
+        `;
+    })
+    .finally(() => {
+        // Restaurar el botón
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    });
 }

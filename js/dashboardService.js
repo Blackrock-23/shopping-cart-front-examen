@@ -556,25 +556,21 @@ function addUser() {
                 email,
                 role
             })
-                listProducts += createProductCard(product);
-            });
-
-            listProducts += `
-        </div>
-        <nav aria-label="Page navigation" class="mt-3">
-            <ul class="pagination justify-content-center">
-                <li class="page-item ${page === 1 ? 'disabled' : ''}">
-                    <a class="page-link" href="#" onclick="loadProductPage(${page - 1})">Anterior</a>
-                </li>
-                <li class="page-item active"><a class="page-link" href="#">${page}</a></li>
-                <li class="page-item ${page === totalPages ? 'disabled' : ''}">
-                    <a class="page-link" href="#" onclick="loadProductPage(${page + 1})">Siguiente</a>
-                </li>
-            </ul>
-        </nav>
-        `;
-
-            document.getElementById('info').innerHTML = listProducts;
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => { throw new Error(err.message || 'Error al agregar usuario'); });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Usuario agregado:', data);
+            // Optionally, refresh the user list or show a success message
+            // For example, if getUsers() refreshes the user list:
+            // getUsers(); 
+            // Or, show a success message directly:
+            document.getElementById('info').innerHTML = '<div class="alert alert-success">Usuario agregado con éxito.</div>';
+            // Consider calling a function that reloads the current view if needed, e.g., loadUserPage(currentPage);
         })
         .catch(error => {
             console.error('Error:', error);
@@ -586,6 +582,7 @@ function addUser() {
             </div>
         `;
         });
+    }); // Closes the 'addUserForm.addEventListener'
 }
 
 // Función para filtrar productos
