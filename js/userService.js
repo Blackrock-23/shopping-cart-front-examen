@@ -352,63 +352,52 @@ function showAddUserForm() {
 
 // Función para añadir un nuevo usuario
 function addUser() {
-    const firstName = document.getElementById('newFirstName').value;
-    const lastName = document.getElementById('newLastName').value;
-    const email = document.getElementById('newEmail').value;
-    const job = document.getElementById('newJob').value;
-    
-    document.getElementById('info').innerHTML = `
-        <div class="d-flex justify-content-center">
-            <div class="spinner-border text-success" role="status">
-                <span class="visually-hidden">Creando usuario...</span>
+    const modalUser = `
+        <div class="modal fade" id="modalUser" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog" modal-sm>
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="exampleModalLabel"><i class="fa-solid fa-user-plus"></i>Add User</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="card">
+                            <div class="card-body">
+                                <form id="formAddUser"> 
+                                    <div class="mb-3">
+                                        <label for="name" class="form-label">First Name</label>
+                                        <input type="text" class="form-control" id="name" placeholder="Example input placeholder" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="last_name" class="form-label">Last_name</label>
+                                        <input type="text" class="form-control" id="last_name" placeholder="text input placeholder" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="email" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="email" placeholder="email input placeholder" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="avatar" class="form-label">Avatar</label>
+                                        <input type="url" class="form-control" id="avatar" placeholder="Avatar input placeholder" required>
+                                    </div>
+                                    <div class="mb-3 text-center">
+                                        <button class="btn btn-success" type="button" onclick="saveUser()"><i class="fa-solid fa-floppy-disk"></i>  Save</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-    `;
-    
-    fetch('https://reqres.in/api/users', {
-        method: "POST",
-        headers: {
-            "Content-type": "application/json",
-            'x-api-key': 'reqres-free-v1'
-        },
-        body: JSON.stringify({
-            first_name: firstName,
-            last_name: lastName,
-            email: email,
-            job: job
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        // Mostrar mensaje de éxito
-        const alertDiv = document.createElement('div');
-        alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 end-0 m-3';
-        alertDiv.setAttribute('role', 'alert');
-        alertDiv.innerHTML = `
-            <strong>¡Éxito!</strong> Usuario creado correctamente con ID: ${data.id}.
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        `;
-        
-        document.body.appendChild(alertDiv);
-        
-        // Eliminar alerta después de 3 segundos
-        setTimeout(() => {
-            alertDiv.remove();
-        }, 3000);
-        
-        // Volver a la lista de usuarios
-        getUsers();
-    })
-    .catch(error => {
-        document.getElementById('info').innerHTML = `
-            <div class="alert alert-danger" role="alert">
-                <h4 class="alert-heading">Error al crear el usuario</h4>
-                <p>${error.message || 'Ocurrió un error inesperado'}</p>
-                <button class="btn btn-primary" onclick="getUsers()">Volver a la lista</button>
-            </div>
-        `;
-    });
+    </div>
+    `
+    document.getElementById('showModal').innerHTML = modalUser
+    const modal = new bootstrap.Modal(
+        document.getElementById('modalUser')
+    )
+    modal.show()
 }
+
 
 // Función para añadir efectos de hover a las filas
 function addRowHoverEffects() {
@@ -440,7 +429,7 @@ function updateUserCount() {
     })
     .catch(() => {
         if (document.getElementById('userCount')) {
-        
+
         // Crear un blob y un enlace de descarga
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);

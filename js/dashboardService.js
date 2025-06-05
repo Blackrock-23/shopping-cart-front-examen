@@ -5,12 +5,24 @@ document.addEventListener('DOMContentLoaded', function () {
     showWelcomeMessage();
     // Inicializar contadores del dashboard
     updateDashboardCounters();
+    
+    // Inicializar eventos de los nuevos botones
+    initializeNewButtons();
 });
 
-// URL base de la API (sin barra al final)
-const API_URL = 'https://fakestoreapi.com';
+// Función para inicializar los nuevos botones
+function initializeNewButtons() {
+    // Botón para agregar producto
+    const addProductBtn = document.getElementById('addProductBtn');
+    if (addProductBtn) {
+        addProductBtn.addEventListener('click', showAddProductModal);
+    }
 
-// Función para actualizar los contadores del dashboard
+    // Botón para agregar carrito
+    const addCartBtn = document.getElementById('addCartBtn');
+    if (addCartBtn) {
+        addCartBtn.addEventListener('click', showAddCartModal);
+    }
 function updateDashboardCounters() {
     // Actualizar contador de usuarios
     fetch(`${API_URL}/users`, {
@@ -1214,4 +1226,4 @@ function tokenValidate() {
         // Aquí podrías actualizar elementos de la UI con la información del usuario
         console.log('Usuario autenticado:', userData.name);
     }
-}
+    }

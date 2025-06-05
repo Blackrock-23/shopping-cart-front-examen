@@ -366,7 +366,6 @@ function showFavorites() {
     
     document.getElementById('info').innerHTML = favoritesHtml;
 }
-
 // Función para eliminar un producto de favoritos
 function removeFromFavorites(id) {
     let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
