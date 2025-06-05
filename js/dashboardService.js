@@ -5,24 +5,12 @@ document.addEventListener('DOMContentLoaded', function () {
     showWelcomeMessage();
     // Inicializar contadores del dashboard
     updateDashboardCounters();
-    
-    // Inicializar eventos de los nuevos botones
-    initializeNewButtons();
 });
 
-// Función para inicializar los nuevos botones
-function initializeNewButtons() {
-    // Botón para agregar producto
-    const addProductBtn = document.getElementById('addProductBtn');
-    if (addProductBtn) {
-        addProductBtn.addEventListener('click', showAddProductModal);
-    }
+// URL base de la API (sin barra al final)
+const API_URL = 'https://fakestoreapi.com';
 
-    // Botón para agregar carrito
-    const addCartBtn = document.getElementById('addCartBtn');
-    if (addCartBtn) {
-        addCartBtn.addEventListener('click', showAddCartModal);
-    }
+// Función para actualizar los contadores del dashboard
 function updateDashboardCounters() {
     // Actualizar contador de usuarios
     fetch(`${API_URL}/users`, {
@@ -215,6 +203,9 @@ function getUsers() {
             let listUsers = `
         <div class="d-flex justify-content-between mb-3">
             <h5>Total usuarios: ${users.length}</h5>
+            <button class="btn btn-sm btn-primary" onclick="showAddUserForm()">
+                <i class="bi bi-plus-circle me-1"></i>Añadir usuario
+            </button>
             <button class="btn btn-sm btn-outline-secondary" onclick="showWelcomeMessage()">Volver</button>
         </div>
         <div class="table-responsive">
@@ -323,7 +314,12 @@ function loadUserPage(page) {
 
                     let listUsers = `
             <div class="d-flex justify-content-between mb-3">
-                <h5>Total usuarios: ${totalUsers}</h5>
+                <div>
+                    <h5>Total usuarios: ${totalUsers}</h5>
+                    <button class="btn btn-sm btn-primary" onclick="showAddUserForm()">
+                        <i class="bi bi-plus-circle me-1"></i>Añadir usuario
+                    </button>
+                </div>
                 <button class="btn btn-sm btn-outline-secondary" onclick="showWelcomeMessage()">Volver</button>
             </div>
             <div class="table-responsive">
@@ -385,340 +381,181 @@ function loadUserPage(page) {
                 <button class="btn btn-sm btn-outline-secondary" onclick="showWelcomeMessage()">Volver</button>
             </div>
         `;
-        });
-}
+    });
 
-// Función para mostrar detalles de un usuario en un modal
-function showUserDetails(userId) {
-    // Mostrar indicador de carga en el modal
-    document.getElementById('detailsModalLabel').textContent = 'Detalles del Usuario';
-    document.getElementById('detailsModalBody').innerHTML = `
-        <div class="d-flex justify-content-center my-4">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Cargando...</span>
+// Función para agregar un nuevo usuario
+function showAddUserForm() {
+    document.getElementById('info').innerHTML = `
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Añadir nuevo usuario</h5>
+            </div>
+            <div class="card-body">
+                <form id="addUserForm">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="newFirstName" class="form-label">Nombre</label>
+                            <input type="text" class="form-control" id="newFirstName" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="newLastName" class="form-label">Apellido</label>
+                            <input type="text" class="form-control" id="newLastName" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newEmail" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="newEmail" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newUsername" class="form-label">Nombre de usuario</label>
+                        <input type="text" class="form-control" id="newUsername" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label">Contraseña</label>
+                        <input type="password" class="form-control" id="newPassword" required>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <button type="button" class="btn btn-secondary" onclick="getUsers()">Cancelar</button>
+                        <button type="button" class="btn btn-success" onclick="addUser()">Crear usuario</button>
+                    </div>
+                </form>
             </div>
         </div>
     `;
+}
 
-    // Mostrar el modal
-    const detailsModal = new bootstrap.Modal(document.getElementById('detailsModal'));
-    detailsModal.show();
-
-    // Obtener detalles del usuario desde la API
-    fetch(`${API_URL}/users/${userId}`, {
-        method: "GET",
+// Función para crear un nuevo usuario
+function addUser() {
+    const firstName = document.getElementById('newFirstName').value;
+    const lastName = document.getElementById('newLastName').value;
+    const email = document.getElementById('newEmail').value;
+    const username = document.getElementById('newUsername').value;
+    const password = document.getElementById('newPassword').value;
+    
+    document.getElementById('info').innerHTML = `
+        <div class="d-flex justify-content-center">
+            <div class="spinner-border text-success" role="status">
+                <span class="visually-hidden">Creando usuario...</span>
+            </div>
+        </div>
+    `;
+    
+    fetch(`${API_URL}/users`, {
+        method: "POST",
         headers: {
             "Content-type": "application/json"
-        }
-    })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Error al obtener detalles del usuario');
+        },
+        body: JSON.stringify({
+            name: `${firstName} ${lastName}`,
+            username: username,
+            email: email,
+            password: password,
+            phone: "",
+            address: {
+                street: "",
+                suite: "",
+                city: "",
+                zipcode: "",
+                geo: {
+                    lat: "0",
+                    lng: "0"
+                }
+            },
+            company: {
+                name: "",
+                catchPhrase: "",
+                bs: ""
             }
-            return response.json();
         })
-        .then(user => {
-            // Formatear el nombre completo del usuario
-            const fullName = user.name ? 
-                (user.name.firstname && user.name.lastname ? 
-                    `${user.name.firstname} ${user.name.lastname}` : 
-                    (typeof user.name === 'string' ? user.name : 'Usuario sin nombre')
-                ) : 'Usuario sin nombre';
-            
-            // Formatear el nombre para mostrar con la primera letra en mayúscula
-            const formattedName = fullName
-                .split(' ')
-                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                .join(' ');
-                
-            // Obtener las iniciales para el avatar
-            const initials = formattedName.split(' ')
-                .map(word => word.charAt(0))
-                .join('')
-                .substring(0, 2);
-                
-            // Generar un color aleatorio para el avatar
-            const avatarColors = ['primary', 'success', 'info', 'warning', 'danger'];
-            const avatarColor = avatarColors[Math.floor(Math.random() * avatarColors.length)];
-            
-            // Mostrar detalles del usuario en el modal
-            document.getElementById('detailsModalBody').innerHTML = `
-            <div class="row">
-                <div class="col-md-4 text-center">
-                    <div class="bg-${avatarColor} text-white rounded-circle mb-3 d-flex align-items-center justify-content-center" style="width: 150px; height: 150px; margin: 0 auto;">
-                        <span style="font-size: 3rem; font-weight: 500;">${initials}</span>
-                    </div>
-                    <h5>${formattedName}</h5>
-                    <span class="badge bg-primary mb-3">${user.role || 'Usuario'}</span>
-                </div>
-                <div class="col-md-8">
-                    <div class="mb-3">
-                        <h6 class="text-muted mb-2">Información de contacto</h6>
-                        <div class="d-flex align-items-center mb-2">
-                            <i class="bi bi-envelope me-2 text-primary"></i>
-                            <span>${user.email}</span>
-                        </div>
-                        <div class="d-flex align-items-center mb-2">
-                            <i class="bi bi-person-badge me-2 text-primary"></i>
-                            <span>ID: ${user.id}</span>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <h6 class="text-muted mb-2">Información adicional</h6>
-                        <div class="d-flex align-items-center mb-2">
-                            <i class="bi bi-calendar-check me-2 text-success"></i>
-                            <span>Fecha de registro: ${new Date().toLocaleDateString()}</span>
-                        </div>
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-shield-check me-2 text-success"></i>
-                            <span>Estado: <span class="badge bg-success">Activo</span></span>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <button class="btn btn-primary me-2" data-bs-dismiss="modal">
-                            <i class="bi bi-x-circle me-1"></i>Cerrar
-                        </button>
-                    </div>
-                </div>
-            </div>
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error al crear el usuario');
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Mostrar mensaje de éxito
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 end-0 m-3';
+        alertDiv.setAttribute('role', 'alert');
+        alertDiv.innerHTML = `
+            <strong>¡Éxito!</strong> Usuario creado correctamente con ID: ${data.id}.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         `;
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            document.getElementById('detailsModalBody').innerHTML = `
+        
+        document.body.appendChild(alertDiv);
+        
+        // Eliminar alerta después de 3 segundos
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 3000);
+        
+        // Volver a la lista de usuarios
+        getUsers();
+    })
+    .catch(error => {
+        document.getElementById('info').innerHTML = `
             <div class="alert alert-danger" role="alert">
-                <h5 class="alert-heading">Error al cargar detalles</h5>
+                <h4 class="alert-heading">Error al crear el usuario</h4>
                 <p>${error.message || 'Ocurrió un error inesperado'}</p>
+                <button class="btn btn-primary" onclick="getUsers()">Volver a la lista</button>
             </div>
         `;
-        });
+    });
 }
 
-// Función para obtener y mostrar productos
-function getProducts() {
-    document.getElementById('cardHeader').innerHTML = '<h4 class="mb-0"><i class="bi bi-box-seam me-2"></i>Listado de productos</h4>';
-
-    // Mostrar indicador de carga
-    document.getElementById('info').innerHTML = `
-        <div class="d-flex justify-content-center">
-            <div class="spinner-border text-success" role="status">
-                <span class="visually-hidden">Cargando...</span>
-            </div>
-        </div>
-    `;
-
-    // Obtener productos directamente de la URL
-    fetch('https://fakestoreapi.com/products')
-        .then(response => {
-            console.log('Respuesta de productos:', response.status);
-            if (!response.ok) {
-                throw new Error(`Error HTTP: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(products => {
-            console.log('Productos recibidos:', products.length);
-            
-            // Guardar productos en variable global para filtrado
-            window.allProducts = products;
-            
-            // Obtener categorías únicas de los productos
-            const categories = [...new Set(products.map(product => product.category))];
-            console.log('Categorías:', categories);
-            
-            if (!products || products.length === 0) {
-                document.getElementById('info').innerHTML = `
-                <div class="alert alert-warning" role="alert">
-                    <h4 class="alert-heading">No se encontraron productos</h4>
-                    <p>No hay productos disponibles en este momento.</p>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="showWelcomeMessage()">Volver</button>
-                </div>
-            `;
-                return;
-            }
-            
-            // Crear filtros y controles
-            let productContent = `
-            <div class="row mb-4">
-                <div class="col-md-8">
-                    <div class="d-flex align-items-center">
-                        <h5 class="mb-0 me-3">Total productos: ${products.length}</h5>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="showWelcomeMessage()">
-                            <i class="bi bi-arrow-left me-1"></i>Volver
-                        </button>
+    // Mostrar formulario para agregar nuevo usuario
+    const addUserForm = `
+        <div class="row">
+            <div class="col-md-6 offset-md-3">
+                <h4 class="mb-3">Agregar nuevo usuario</h4>
+                <form id="addUserForm">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Nombre</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
                     </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Buscar productos..." id="searchProductInput" onkeyup="filterProducts()">
-                        <button class="btn btn-outline-success" type="button">
-                            <i class="bi bi-search"></i>
-                        </button>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Correo electrónico</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
                     </div>
-                </div>
-            </div>
-            
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <div class="d-flex align-items-center">
-                        <label class="me-2">Filtrar por categoría:</label>
-                        <select class="form-select" id="categoryFilter" onchange="filterProducts()">
-                            <option value="">Todas las categorías</option>
-                            ${categories.map(category => `<option value="${category}">${category}</option>`).join('')}
+                    <div class="mb-3">
+                        <label for="role" class="form-label">Rol</label>
+                        <select class="form-select" id="role" name="role" required>
+                            <option value="">Seleccione un rol</option>
+                            <option value="admin">Administrador</option>
+                            <option value="user">Usuario</option>
                         </select>
                     </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="d-flex align-items-center">
-                        <label class="me-2">Ordenar por:</label>
-                        <select class="form-select" id="sortProducts" onchange="filterProducts()">
-                            <option value="default">Predeterminado</option>
-                            <option value="price-asc">Precio: Menor a Mayor</option>
-                            <option value="price-desc">Precio: Mayor a Menor</option>
-                            <option value="name-asc">Nombre: A-Z</option>
-                            <option value="name-desc">Nombre: Z-A</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="productsContainer" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-            `;
-            
-            // Mostrar los productos en la interfaz
-            products.forEach(product => {
-                productContent += `
-                <div class="col">
-                    <div class="card h-100 shadow-sm product-card">
-                        <div class="position-relative">
-                            <img src="${product.image}" class="card-img-top p-3" style="height: 200px; object-fit: contain;" alt="${product.title}">
-                            <span class="position-absolute top-0 end-0 badge bg-${getRandomColor()} m-2">${product.category}</span>
-                        </div>
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="card-title mb-2">${product.title}</h5>
-                            <p class="card-text text-muted small mb-3">${product.description.substring(0, 60)}...</p>
-                            <div class="d-flex justify-content-between align-items-center mt-auto">
-                                <span class="fw-bold text-success">$${product.price}</span>
-                                <button class="btn btn-sm btn-outline-primary" onclick="showProductDetails(${product.id})">
-                                    <i class="bi bi-eye me-1"></i>Ver detalles
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                `;
-            });
-            
-            productContent += `
-            </div>
-            `;
-            
-            document.getElementById('info').innerHTML = productContent;
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            document.getElementById('info').innerHTML = `
-                <div class="alert alert-danger" role="alert">
-                    <h4 class="alert-heading">Error al cargar productos</h4>
-                    <p>${error.message || 'Ocurrió un error inesperado'}</p>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="showWelcomeMessage()">Volver</button>
-                </div>
-            `;
-        });
-}
-
-// Función para obtener un color aleatorio para el badge de categoría
-function getRandomColor() {
-    const colors = ['primary', 'success', 'info', 'warning', 'danger'];
-    const index = Math.floor(Math.random() * colors.length);
-    return colors[index];
-}
-
-// Función para crear una tarjeta de producto
-function createProductCard(product) {
-    // Asegurarse de que la descripción no sea demasiado larga
-    const shortDescription = product.description ?
-        (product.description.length > 60 ? product.description.substring(0, 60) + '...' : product.description) :
-        'Sin descripción';
-
-    // Obtener la imagen o usar una imagen por defecto
-    const imageUrl = product.image || 'https://via.placeholder.com/150';
-
-    // Generar un color aleatorio para el badge de categoría
-    const categoryColors = ['primary', 'success', 'info', 'warning', 'danger'];
-    const colorIndex = Math.floor(Math.random() * categoryColors.length);
-    const badgeColor = categoryColors[colorIndex];
-
-    return `
-    <div class="col">
-        <div class="card h-100 shadow-sm product-card">
-            <div class="position-relative">
-                <img src="${imageUrl}" class="card-img-top p-3" style="height: 200px; object-fit: contain;" alt="${product.title}">
-                <span class="position-absolute top-0 end-0 badge bg-${badgeColor} m-2">${product.category}</span>
-            </div>
-            <div class="card-body d-flex flex-column">
-                <h5 class="card-title mb-2">${product.title}</h5>
-                <p class="card-text text-muted small mb-3">${shortDescription}</p>
-                <div class="d-flex justify-content-between align-items-center mt-auto">
-                    <span class="fw-bold text-success">$${product.price}</span>
-                    <button class="btn btn-sm btn-outline-primary" onclick="showProductDetails(${product.id})">
-                        <i class="bi bi-eye me-1"></i>Ver detalles
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    `;
-}
-
-// Función para cargar una página específica de productos
-function loadProductPage(page) {
-    document.getElementById('info').innerHTML = `
-        <div class="d-flex justify-content-center">
-            <div class="spinner-border text-success" role="status">
-                <span class="visually-hidden">Cargando...</span>
+                    <button type="submit" class="btn btn-primary">Agregar usuario</button>
+                    <button type="button" class="btn btn-secondary" onclick="showWelcomeMessage()">Cancelar</button>
+                </form>
             </div>
         </div>
     `;
 
-    // La API de Fake Store no soporta paginación directamente, así que simulamos la paginación
-    // obteniendo todos los productos y luego filtrando
-    const limit = 9; // Número de productos por página
+    document.getElementById('info').innerHTML = addUserForm;
 
-    // Obtener todos los productos
-    fetch(`${API_URL}/products`, {
-        method: "GET",
-        headers: {
-            "Content-type": "application/json"
-        }
-    })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Error al obtener productos');
-            }
-            return response.json();
-        })
-        .then(allProducts => {
-            const totalProducts = allProducts.length;
-            const totalPages = Math.ceil(totalProducts / limit);
+    // Agregar evento de envío del formulario
+    document.getElementById('addUserForm').addEventListener('submit', (e) => {
+        e.preventDefault();
 
-            // Simular paginación en el cliente
-            const startIndex = (page - 1) * limit;
-            const endIndex = startIndex + limit;
-            const paginatedProducts = allProducts.slice(startIndex, endIndex);
+        // Obtener datos del formulario
+        const name = document.getElementById('name').value;
+        const email = document.getElementById('email').value;
+        const role = document.getElementById('role').value;
 
-            let listProducts = `
-        <div class="d-flex justify-content-between mb-3">
-            <h5>Total productos: ${totalProducts}</h5>
-            <button class="btn btn-sm btn-outline-secondary" onclick="showWelcomeMessage()">
-                <i class="bi bi-arrow-left me-1"></i>Volver
-            </button>
-        </div>
-        <div class="row row-cols-1 row-cols-md-3 g-4">
-        `;
-
-            paginatedProducts.forEach(product => {
-                // Usar la función createProductCard para mantener consistencia
+        // Enviar solicitud para agregar nuevo usuario
+        fetch(`${API_URL}/users`, {
+            method: "POST",
+            headers: {
+                "Content-type": "application/json"
+            },
+            body: JSON.stringify({
+                name,
+                email,
+                role
+            })
                 listProducts += createProductCard(product);
             });
 
@@ -809,15 +646,8 @@ function filterProducts() {
             filteredProducts.forEach(product => {
                 productsHTML += createProductCard(product);
             });
-            productsContainer.innerHTML = productsHTML;
-        }
-    }
-}
-
-// Función para mostrar detalles de un producto en un modal
-function showProductDetails(productId) {
     // Mostrar indicador de carga en el modal
-    document.getElementById('detailsModalLabel').textContent = 'Detalles del Producto';
+    document.getElementById('detailsModalLabel').textContent = 'Detalles del Usuario';
     document.getElementById('detailsModalBody').innerHTML = `
         <div class="d-flex justify-content-center my-4">
             <div class="spinner-border text-success" role="status">
@@ -1226,4 +1056,4 @@ function tokenValidate() {
         // Aquí podrías actualizar elementos de la UI con la información del usuario
         console.log('Usuario autenticado:', userData.name);
     }
-    }
+}
